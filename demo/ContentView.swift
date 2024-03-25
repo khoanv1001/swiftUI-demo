@@ -13,13 +13,20 @@ struct ContentView: View {
     @State private var selectedPlanet: Planet?
     @State private var zoomScale: CGFloat = 1.0
     @State private var prevOffset: CGPoint = .zero
-    
-    let planets: [Planet] = [
-        Planet(name: "This is Earth", imageName: "earth", position: CGPoint(x: 200, y: 300)),
-        Planet(name: "This is Venus", imageName: "venus", position: CGPoint(x: 250, y: 400)),
-        // Add more planets as needed
+    @State private var planetPositions: [CGPoint] = []
+    @State private var planets: [Planet] = []
+
+    let backgroundWidth: CGFloat = UIScreen.main.bounds.width * 2
+    let backgroundHeight: CGFloat = UIScreen.main.bounds.height * 1
+    let numberOfPlanets = 100
+    let gridSize: CGFloat = 50
+    let planetSizes: [CGSize] = [
+        CGSize(width: 40, height: 40),
+        CGSize(width: 30, height: 30),
+        CGSize(width: 20, height: 20),
+        CGSize(width: 10, height: 10)
     ]
-    
+
     var body: some View {
         ZStack {
             Image("Background")
@@ -44,26 +51,27 @@ struct ContentView: View {
                 )
                 .scaleEffect((zoomScale - 1) * 0.1 + 1)
                 .animation(.easeInOut(duration: 0.5), value: zoomScale)
+
             ForEach(planets, id: \.self) { planet in
-                Image(planet.imageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 50, height: 50)
-                    .position(
-                        CGPoint(
-                            x: planet.position.x + dragOffset.width + prevOffset.x,
-                            y: planet.position.y + dragOffset.height + prevOffset.y
+                    Image(planet.imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: planet.size.width, height: planet.size.height)
+                        .position(
+                            CGPoint(
+                                x: planet.position.x + dragOffset.width + prevOffset.x,
+                                y: planet.position.y + dragOffset.height + prevOffset.y
+                            )
                         )
-                    )
-                    .gesture(
-                        TapGesture()
-                            .onEnded {
-                                selectedPlanet = planet
-                                isPlanetInfoShown = true
-                            }
-                    )
-                    .scaleEffect(zoomScale)
-                    .animation(.easeInOut(duration: 0.5), value: zoomScale)
+                        .gesture(
+                            TapGesture()
+                                .onEnded {
+                                    selectedPlanet = planet
+                                    isPlanetInfoShown = true
+                                }
+                        )
+                        .scaleEffect(zoomScale)
+                        .animation(.easeInOut(duration: 0.5), value: zoomScale)
             }
             VStack {
                 HStack {
@@ -101,13 +109,70 @@ struct ContentView: View {
             }
         }
         .edgesIgnoringSafeArea(.all)
+        .onAppear {
+            let width = Int(backgroundWidth)
+            let height = Int(backgroundHeight)
+
+            let map = createParkingMap(width: width, height: height)
+            var usedPositions: Set<[Int]> = []
+
+            for _ in 0..<numberOfPlanets {
+                let position = generateUniquePosition(map: map, usedPositions: &usedPositions)
+                let point = CGPoint(x: position[0], y: position[1])
+                let randomSize = planetSizes.randomElement()!
+
+                planets.append(Planet(name: "This is Demo", imageName: ["post1","post2", "post3", "post4", "post5"].randomElement()!, position: point, size: randomSize))
+            }
+        }
     }
     func adjustedPosition(for position: CGPoint, with offset: CGSize) -> CGPoint {
-        return CGPoint(x: position.x + offset.width, y: position.y + offset.height)
+      return CGPoint(x: position.x + offset.width, y: position.y + offset.height)
     }
-    
+
     func setZoomScale(_ scale: CGFloat) {
         zoomScale = max(min(scale, 5), 1)
+    }
+
+    func generateUniquePosition(map: [Int: [Int: [Int]]], usedPositions: inout Set<[Int]>) -> [Int] {
+        var position: [Int] = []
+
+        repeat {
+            position = getRandomParkingSpace(parkingMap: map)
+        } while usedPositions.contains(position)
+
+        usedPositions.insert(position)
+        return map[position[0]]![position[1]]!
+    }
+
+
+    func createParkingMap(width: Int, height: Int) -> [Int: [Int: [Int]]] {
+        let size = Int(gridSize)
+        let rows = height / size
+        let cols = width / size
+
+        var parkingMap = [Int: [Int: [Int]]]()
+
+        for i in 0..<rows {
+            for j in 0..<cols {
+                let x = j * size
+                let y = i * size
+
+                if parkingMap[i] == nil {
+                    parkingMap[i] = [Int: [Int]]()
+                }
+                parkingMap[i]?[j] = [x, y]
+            }
+        }
+
+        return parkingMap
+    }
+
+    func getRandomParkingSpace(parkingMap: [Int: [Int: [Int]]]) -> [Int] {
+        let randRow = Int.random(in: 0..<parkingMap.count)
+        let row = Array(parkingMap.keys)[randRow]
+        let randCol = Int.random(in: 0..<parkingMap[row]!.count)
+
+        return [randRow, randCol]
     }
 }
 struct Planet: Identifiable, Hashable {
@@ -115,6 +180,7 @@ struct Planet: Identifiable, Hashable {
     let name: String
     let imageName: String
     let position: CGPoint
+    let size: CGSize
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
