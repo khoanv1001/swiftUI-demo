@@ -10,16 +10,16 @@ import SwiftUI
 struct ContentView: View {
     @State private var dragOffset: CGSize = .zero
     @State private var isPlanetInfoShown = false
-    @State private var selectedPlanet: Planet?
+    @State private var selectedPlanet: Post?
     @State private var zoomScale: CGFloat = 1.0
     @State private var prevOffset: CGPoint = .zero
     @State private var planetPositions: [CGPoint] = []
-    @State private var planets: [Planet] = []
+    @State private var planets: [Post] = []
 
     let backgroundWidth: CGFloat = UIScreen.main.bounds.width * 2
     let backgroundHeight: CGFloat = UIScreen.main.bounds.height * 1
-    let numberOfPlanets = 100
-    let gridSize: CGFloat = 50
+    let numberOfPlanets = 10
+    let gridSize: CGFloat = 100
     let planetSizes: [CGSize] = [
         CGSize(width: 40, height: 40),
         CGSize(width: 30, height: 30),
@@ -53,10 +53,12 @@ struct ContentView: View {
                 .animation(.easeInOut(duration: 0.5), value: zoomScale)
 
             ForEach(planets, id: \.self) { planet in
-                    Image(planet.imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: planet.size.width, height: planet.size.height)
+//                    Image(planet.imageUrl)
+//                        .resizable()
+//                        .aspectRatio(contentMode: .fit)
+                    ThumbnailView(post: planet)
+                    .frame(width: planet.size.width, height: planet.size.height)
+                        .fixedSize(horizontal: true, vertical: true)
                         .position(
                             CGPoint(
                                 x: planet.position.x + dragOffset.width + prevOffset.x,
@@ -105,7 +107,7 @@ struct ContentView: View {
             }
             .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
             if isPlanetInfoShown {
-                CustomDialog(isActive: $isPlanetInfoShown, title: selectedPlanet?.name ?? "default", message: "haha", buttonTitle: "Save", action: {})
+                CustomDialog(isActive: $isPlanetInfoShown, title: selectedPlanet?.title ?? "default", message: selectedPlanet?.detail ?? "haha", buttonTitle: "Save", action: {})
             }
         }
         .edgesIgnoringSafeArea(.all)
@@ -121,7 +123,7 @@ struct ContentView: View {
                 let point = CGPoint(x: position[0], y: position[1])
                 let randomSize = planetSizes.randomElement()!
 
-                planets.append(Planet(name: "This is Demo", imageName: ["post1","post2", "post3", "post4", "post5"].randomElement()!, position: point, size: randomSize))
+                planets.append(Post(title: "This is the title", imageUrl: ["post1","post2", "post3", "post4", "post5"].randomElement()!, detail: "Hello, everyone! This is the LONGEST TEXT EVER! I was inspired by the various other on the internet, and I wanted to make my own. So here it is! This is going to be a WORLD RECORD! This is actually my third attempt at doing this. The first time, I didn't save it. The second time, the Neocities editor crashed. Now I'm writing this in Notepad, then copying it into the Neocities editor instead of typing it directly in the Neocities editor to avoid crashing. It sucks that my past two attempts are gone now. Those actually got pretty long. Not the longest, but still pretty long. I hope this one won't get lost somehow. Anyways, let's talk about WAFFLES! I like waffles. Waffles are cool. Waffles is a funny word. There's a Teen Titans Go episode Hello, everyone! This is the LONGEST TEXT EVER! I was inspired by the various other on the internet, and I wanted to make my own. So here it is! This is going to be a WORLD RECORD! This is actually my third attempt at doing this. The first time, I didn't save it. The second time, the Neocities editor crashed. Now I'm writing this in Notepad, then copying it into the Neocities editor instead of typing it directly in the Neocities editor to avoid crashing. It sucks that my past two attempts are gone now. Those actually got pretty long. Not the longest, but still pretty long. I hope this one won't get lost somehow. Anyways, let's talk about WAFFLES! I like waffles. Waffles are cool. Waffles is a funny word. There's a Teen Titans Go episode Hello, everyone! This is the LONGEST TEXT EVER! I was inspired by the various other on the internet, and I wanted to make my own. So here it is! This is going to be a WORLD RECORD! This is actually my third attempt at doing this. The first time, I didn't save it. The second time, the Neocities editor crashed. Now I'm writing this in Notepad, then copying it into the Neocities editor instead of typing it directly in the Neocities editor to avoid crashing. It sucks that my past two attempts are gone now. Those actually got pretty long. Not the longest, but still pretty long. I hope this one won't get lost somehow. Anyways, let's talk about WAFFLES! I like waffles. Waffles are cool. Waffles is a funny word. There's a Teen Titans Go episode", position: point, size: CGSize(width: 60, height: 60)))
             }
         }
     }
@@ -175,10 +177,13 @@ struct ContentView: View {
         return [randRow, randCol]
     }
 }
-struct Planet: Identifiable, Hashable {
+
+
+struct Post: Identifiable, Hashable {
     let id = UUID()
-    let name: String
-    let imageName: String
+    let title: String
+    let imageUrl: String
+    let detail: String
     let position: CGPoint
     let size: CGSize
     
@@ -186,24 +191,12 @@ struct Planet: Identifiable, Hashable {
         hasher.combine(id)
     }
     
-    static func == (lhs: Planet, rhs: Planet) -> Bool {
+    static func == (lhs: Post, rhs: Post) -> Bool {
         return lhs.id == rhs.id
     }
 }
 
-struct PlanetDetailView: View {
-    let planet: Planet
-    
-    var body: some View {
-        VStack {
-            Text(planet.name)
-                .font(.title)
-            // Add more details about the planet
-            Spacer()
-        }
-        .padding()
-    }
-}
+
 
 #Preview {
     ContentView()
